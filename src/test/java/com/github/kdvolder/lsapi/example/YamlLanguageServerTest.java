@@ -21,15 +21,15 @@ import io.typefox.lsapi.InitializeResult;
 import io.typefox.lsapi.PublishDiagnosticsParams;
 import io.typefox.lsapi.ServerCapabilities;
 
-public class MyLanguageServerTest {
+public class YamlLanguageServerTest {
 
 	public static File getTestResource(String name) throws URISyntaxException {
-		return Paths.get(MyLanguageServerTest.class.getResource(name).toURI()).toFile();
+		return Paths.get(YamlLanguageServerTest.class.getResource(name).toURI()).toFile();
 	}
 
 	@Test
 	public void createAndInitializeServerWithWorkspace() throws Exception {
-		LanguageServerHarness harness = new LanguageServerHarness(MyLanguageServer::new);
+		LanguageServerHarness harness = new LanguageServerHarness(YamlLanguageServer::new);
 		File workspaceRoot = getTestResource("/workspace/");
 		assertExpectedInitResult(harness.intialize(workspaceRoot));
 	}
@@ -37,13 +37,13 @@ public class MyLanguageServerTest {
 	@Test
 	public void createAndInitializeServerWithoutWorkspace() throws Exception {
 		File workspaceRoot = null;
-		LanguageServerHarness harness = new LanguageServerHarness(MyLanguageServer::new);
+		LanguageServerHarness harness = new LanguageServerHarness(YamlLanguageServer::new);
 		assertExpectedInitResult(harness.intialize(workspaceRoot));
 	}
 	
 	
 	@Test public void linterMarksBadWordsOnDocumentOpenAndChange() throws Exception {
-		LanguageServerHarness harness = new LanguageServerHarness(MyLanguageServer::new);
+		LanguageServerHarness harness = new LanguageServerHarness(YamlLanguageServer::new);
 		
 		File workspaceRoot = getTestResource("/workspace/");
 		assertExpectedInitResult(harness.intialize(workspaceRoot));
@@ -71,7 +71,7 @@ public class MyLanguageServerTest {
 	}
 	
 	@Test public void completions() throws Exception {
-		LanguageServerHarness harness = new LanguageServerHarness(MyLanguageServer::new);
+		LanguageServerHarness harness = new LanguageServerHarness(YamlLanguageServer::new);
 		
 		File workspaceRoot = getTestResource("/workspace/");
 		assertExpectedInitResult(harness.intialize(workspaceRoot));

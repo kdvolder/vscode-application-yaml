@@ -79,7 +79,7 @@ public class Main {
      * When the request stream is closed, wait for 5s for all outstanding responses to compute, then return.
      */
     public static void run(Connection connection) {
-    	MyLanguageServer server = new MyLanguageServer();
+    	YamlLanguageServer server = new YamlLanguageServer();
     	LoggingJsonAdapter jsonServer = new LoggingJsonAdapter(server);
     	jsonServer.setMessageLog(new PrintWriter(System.out));
 

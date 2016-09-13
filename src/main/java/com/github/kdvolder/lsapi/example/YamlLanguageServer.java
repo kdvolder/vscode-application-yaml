@@ -22,13 +22,13 @@ import io.typefox.lsapi.RangeImpl;
 import io.typefox.lsapi.ServerCapabilities;
 import io.typefox.lsapi.ServerCapabilitiesImpl;
 
-public class MyLanguageServer extends SimpleLanguageServer {
+public class YamlLanguageServer extends SimpleLanguageServer {
 
 	private static final String BAD_WORD = "typescript";
 	
 	private int maxProblems = 100;
 	
-	public MyLanguageServer() {
+	public YamlLanguageServer() {
 		SimpleTextDocumentService documents = getTextDocumentService();
 		SimpleWorkspaceService workspace = getWorkspaceService();
 		documents.onDidChangeContent(params -> {
