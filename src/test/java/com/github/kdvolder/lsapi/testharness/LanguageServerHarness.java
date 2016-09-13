@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.assertj.core.api.Condition;
@@ -69,7 +67,7 @@ public class LanguageServerHarness {
 		TextDocumentItemImpl document = new TextDocumentItemImpl();
 		document.setText(content);
 		document.setUri(file.toURI().toString());
-		document.setVersion(1);
+		document.setVersion(getFirstVersion());
 		document.setLanguageId(getLanguageId());
 		return new TextDocumentInfo(document);
 	}
@@ -93,6 +91,10 @@ public class LanguageServerHarness {
 		return "plaintext";
 	}
 	
+	protected String getFileExtension() {
+		return ".txt";
+	}
+	
 	private synchronized void receiveDiagnostics(PublishDiagnosticsParams diags) {
 		this.diagnostics.put(diags.getUri(), diags);
 	}
@@ -111,14 +113,17 @@ public class LanguageServerHarness {
 		return initResult;
 	}
 
-	public TextDocumentInfo openDocument(File file) throws Exception {
+	public TextDocumentInfo openDocument(TextDocumentInfo documentInfo) throws Exception {
 		DidOpenTextDocumentParamsImpl didOpen = new DidOpenTextDocumentParamsImpl();
-		TextDocumentInfo documentInfo = getOrReadFile(file);
 		didOpen.setTextDocument(documentInfo.getDocument());
 		didOpen.setText(documentInfo.getText());
 		didOpen.setUri(documentInfo.getUri());
 		server.getTextDocumentService().didOpen(didOpen);
 		return documentInfo;
+	}
+	
+	public TextDocumentInfo openDocument(File file) throws Exception {
+		return openDocument(getOrReadFile(file));
 	}
 
 	public TextDocumentInfo changeDocument(String uri, String newContent) throws Exception {
@@ -213,6 +218,29 @@ public class LanguageServerHarness {
 		return completions.getItems().stream()
 		.map(this::resolveCompletionItem)
 		.collect(Collectors.toList());
+	}
+
+	public Editor newEditor(String contents) throws Exception {
+		return new Editor(this, contents);
+	}
+
+	public synchronized TextDocumentInfo createWorkingCopy(String contents) throws Exception {
+		TextDocumentItemImpl doc = new TextDocumentItemImpl();
+		doc.setLanguageId(getLanguageId());
+		doc.setText(contents);
+		doc.setUri(createTempUri());
+		doc.setVersion(getFirstVersion());
+		TextDocumentInfo docinfo = new TextDocumentInfo(doc);
+		documents.put(docinfo.getUri(), docinfo);
+		return docinfo;
+	}
+
+	protected int getFirstVersion() {
+		return 1;
+	}
+
+	protected String createTempUri() throws Exception {
+		return File.createTempFile("workingcopy", getFileExtension()).toURI().toString();
 	}
 
 }

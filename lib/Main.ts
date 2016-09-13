@@ -12,11 +12,7 @@ import {LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, St
 
 PortFinder.basePort = 55282;
 
-//TODO: The classpath.txt file is not packaged in the 'built' version. This causes the code
-// in this module to crash if DEBUG=true. 
-//We should auto-detect the missing classpath.txt file and disable debugging based on that.
-
-const DEBUG = false;
+var DEBUG = false;
 const DEBUG_ARG = '-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n';
     //If DEBUG is falsy then
     //   we launch from the 'fat jar' (which has to be built by running mvn package)
@@ -25,21 +21,26 @@ const DEBUG_ARG = '-agentlib:jdwp=transport=dt_socket,server=y,address=8000,susp
     //   - we add DEBUG_ARG to the launch so that remote debugger can attach on port 8000
 
 function getClasspath(context: VSCode.ExtensionContext):string {
-    if (!DEBUG) {
-        return Path.resolve(context.extensionPath, "out", "fat-jar.jar");
-    } else {
-        let projectDir = context.extensionPath;
-        let classpathFile = Path.resolve(projectDir, "classpath.txt");
-        //TODO: async read?
-        let classpath = FS.readFileSync(classpathFile, 'utf8');
-        classpath =  Path.resolve(projectDir, 'target/classes') + ':' + classpath;
-        return classpath;
+    if (DEBUG) {
+        try {
+            let projectDir = context.extensionPath;
+            let classpathFile = Path.resolve(projectDir, "classpath.txt");
+            //TODO: async read?
+            let classpath = FS.readFileSync(classpathFile, 'utf8');
+            classpath =  Path.resolve(projectDir, 'target/classes') + ':' + classpath;
+            return classpath;
+        } catch (e) {
+            //Expected if you classpath.txt file isn't packaged. So this means we are running in packaged mode.    
+            VSCode.window.showInformationMessage('classpath file not found, so disabling DEBUG mode '+e);
+            //Nasty! Be careful, this assumes 'getClasspath' is called before computing debug args.
+            DEBUG = false;
+        }
     }
+    return Path.resolve(context.extensionPath, "out", "fat-jar.jar");
 }
 
 /** Called when extension is activated */
 export function activate(context: VSCode.ExtensionContext) {
-    VSCode.window.showInformationMessage("Spring Boot Yaml Support activating!");
     let javaExecutablePath = findJavaExecutable('java');
     
     if (javaExecutablePath == null) {

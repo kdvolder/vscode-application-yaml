@@ -1,14 +1,21 @@
 package com.github.kdvolder.lsapi.example;
 
+import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.MarkedYAMLException;
+import org.yaml.snakeyaml.error.YAMLException;
+import org.yaml.snakeyaml.nodes.Node;
 
 import com.github.kdvolder.lsapi.util.Futures;
 import com.github.kdvolder.lsapi.util.SimpleLanguageServer;
 import com.github.kdvolder.lsapi.util.SimpleTextDocumentService;
-import com.github.kdvolder.lsapi.util.SimpleWorkspaceService;
 import com.github.kdvolder.lsapi.util.TextDocument;
+import com.google.common.collect.ImmutableList;
 
 import io.typefox.lsapi.CompletionItem;
 import io.typefox.lsapi.CompletionItemImpl;
@@ -24,29 +31,27 @@ import io.typefox.lsapi.ServerCapabilitiesImpl;
 
 public class YamlLanguageServer extends SimpleLanguageServer {
 
-	private static final String BAD_WORD = "typescript";
-	
-	private int maxProblems = 100;
+	private Yaml yaml = new Yaml();
 	
 	public YamlLanguageServer() {
 		SimpleTextDocumentService documents = getTextDocumentService();
-		SimpleWorkspaceService workspace = getWorkspaceService();
+//		SimpleWorkspaceService workspace = getWorkspaceService();
 		documents.onDidChangeContent(params -> {
 			System.out.println("Document changed: "+params);
 			TextDocument doc = params.getDocument();
 			validateDocument(documents, doc);
 		});
 		
-		workspace.onDidChangeConfiguraton(settings -> {
+//		workspace.onDidChangeConfiguraton(settings -> {
 //			System.out.println("Config changed: "+params);
-			Integer val = settings.getInt("languageServerExample", "maxNumberOfProblems");
-			if (val!=null) {
-				maxProblems = ((Number) val).intValue();
-				for (TextDocument doc : documents.getAll()) {
-					validateDocument(documents, doc);
-				}
-			}
-		});
+//			Integer val = settings.getInt("languageServerExample", "maxNumberOfProblems");
+//			if (val!=null) {
+//				maxProblems = ((Number) val).intValue();
+//				for (TextDocument doc : documents.getAll()) {
+//					validateDocument(documents, doc);
+//				}
+//			}
+//		});
 		
 		documents.onCompletion(params -> {
 			CompletableFuture<CompletionList> promise = new CompletableFuture<>();
@@ -99,39 +104,55 @@ public class YamlLanguageServer extends SimpleLanguageServer {
 	}
 
 	private void validateDocument(SimpleTextDocumentService documents, TextDocument doc) {
-		List<DiagnosticImpl> diagnostics = new ArrayList<>();
-		String[] lines = doc.getText().split("\\r?\\n");
-		int problems = 0;
-		for (int i = 0; i < lines.length && problems<maxProblems; i++) {
-			String line = lines[i];
-			int index = line.indexOf(BAD_WORD);
-			if (index>=0) {
-				problems ++;
-				PositionImpl start = new PositionImpl();
-				start.setLine(i);
-				start.setCharacter(index);
-				
-				PositionImpl end = new PositionImpl();
-				end.setLine(i);
-				end.setCharacter(index + BAD_WORD.length());
-				
-				RangeImpl range = new RangeImpl();
-				range.setStart(start);
-				range.setEnd(end);
-
-				DiagnosticImpl d = new DiagnosticImpl();
-				d.setSeverity(Diagnostic.SEVERITY_WARNING);
-				d.setRange(range);
-				d.setSource("example");
-				d.setMessage("You spell that 'TypeScript'");
-				
-				diagnostics.add(d);
-			}
-			
-		}
+		List<DiagnosticImpl> diagnostics = reconcile(documents, doc);
 		documents.publishDiagnostics(doc, diagnostics);
 	}
 	
+	protected List<DiagnosticImpl> reconcile(SimpleTextDocumentService documents, TextDocument doc) {
+		try {
+			Iterator<Node> asts = yaml.composeAll(new StringReader(doc.getText())).iterator();
+			while (asts.hasNext()) {
+				asts.next();
+			}
+			return ImmutableList.of();
+		} catch (YAMLException e) {
+			return ImmutableList.of(parseError(e));
+		}
+	}
+
+	private DiagnosticImpl parseError(YAMLException e) {
+		DiagnosticImpl d = new DiagnosticImpl();
+		d.setMessage(getMessage(e));
+		d.setRange(getRange(e));
+		d.setSeverity(Diagnostic.SEVERITY_ERROR);
+		d.setCode(ErrorCodes.YAML_SYNTAX_ERROR);
+		d.setSource("yaml");
+		return d;
+	}
+
+	private String getMessage(YAMLException e) {
+		if (e instanceof MarkedYAMLException) {
+			return ((MarkedYAMLException) e).getProblem();
+		}
+		return e.getMessage();
+	}
+
+	private RangeImpl getRange(YAMLException _e) {
+		if (_e instanceof MarkedYAMLException) {
+			MarkedYAMLException e = (MarkedYAMLException) _e;
+
+			PositionImpl start = new PositionImpl();
+			start.setLine(e.getProblemMark().getLine());
+			start.setCharacter(e.getProblemMark().getColumn());
+			
+			RangeImpl rng = new RangeImpl();
+			rng.setStart(start);
+			rng.setEnd(start);
+			return rng;
+		}
+		return null;
+	}
+
 	@Override
 	protected ServerCapabilitiesImpl getServerCapabilities() {
 		ServerCapabilitiesImpl c = new ServerCapabilitiesImpl();

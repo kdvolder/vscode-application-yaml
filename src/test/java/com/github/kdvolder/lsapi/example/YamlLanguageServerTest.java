@@ -1,8 +1,5 @@
 package com.github.kdvolder.lsapi.example;
 
-import static com.github.kdvolder.lsapi.testharness.LanguageServerHarness.isDiagnosticCovering;
-import static com.github.kdvolder.lsapi.testharness.LanguageServerHarness.*;
-import static org.assertj.core.api.Assertions.allOf;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
@@ -18,7 +15,6 @@ import com.github.kdvolder.lsapi.testharness.TextDocumentInfo;
 import io.typefox.lsapi.CompletionItem;
 import io.typefox.lsapi.CompletionList;
 import io.typefox.lsapi.InitializeResult;
-import io.typefox.lsapi.PublishDiagnosticsParams;
 import io.typefox.lsapi.ServerCapabilities;
 
 public class YamlLanguageServerTest {
@@ -42,43 +38,15 @@ public class YamlLanguageServerTest {
 	}
 	
 	
-	@Test public void linterMarksBadWordsOnDocumentOpenAndChange() throws Exception {
-		LanguageServerHarness harness = new LanguageServerHarness(YamlLanguageServer::new);
-		
-		File workspaceRoot = getTestResource("/workspace/");
-		assertExpectedInitResult(harness.intialize(workspaceRoot));
-
-		TextDocumentInfo doc = harness.openDocument(getTestResource("/workspace/test-file.txt"));
-		{
-			PublishDiagnosticsParams diagnostics = harness.getDiagnostics(doc);
-			assertThat(diagnostics.getUri()).isEqualTo(doc.getUri());
-			assertThat(diagnostics.getDiagnostics()).areExactly(2, allOf(
-					isWarning,
-					isDiagnosticCovering(doc, "typescript")
-					
-			));
-		}
-		doc = harness.changeDocument(doc.getUri(), "This typescript is good fun");
-		{
-			PublishDiagnosticsParams diagnostics = harness.getDiagnostics(doc);
-			assertThat(diagnostics.getUri()).isEqualTo(doc.getUri());
-			assertThat(diagnostics.getDiagnostics()).areExactly(1, allOf(
-					isWarning,
-					isDiagnosticCovering(doc, "typescript"),
-					isDiagnosticOnLine(0)
-			));
-		}
-	}
-	
 	@Test public void completions() throws Exception {
 		LanguageServerHarness harness = new LanguageServerHarness(YamlLanguageServer::new);
 		
 		File workspaceRoot = getTestResource("/workspace/");
 		assertExpectedInitResult(harness.intialize(workspaceRoot));
 
-		TextDocumentInfo doc = harness.openDocument(getTestResource("/workspace/test-file.txt"));
+		TextDocumentInfo doc = harness.openDocument(getTestResource("/workspace/testfile.yml"));
 		
-		CompletionList completions = harness.getCompletions(doc, doc.positionOf("text"));
+		CompletionList completions = harness.getCompletions(doc, doc.positionOf("foo"));
 		assertThat(completions.isIncomplete()).isFalse();
 		assertThat(completions.getItems())
 			.extracting(CompletionItem::getLabel)

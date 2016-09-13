@@ -49,7 +49,7 @@ public class TextDocumentInfo {
 		return getText().substring(start, end);
 	}
 
-	private int toOffset(Position p) {
+	public int toOffset(Position p) {
 		int startOfLine = startOfLine(p.getLine());
 		return startOfLine+p.getCharacter();
 	}
@@ -94,7 +94,7 @@ public class TextDocumentInfo {
 		return null;
 	}
 
-	private Position toPosition(int offset) {
+	public Position toPosition(int offset) {
 		int line = lineNumber(offset);
 		int startOfLine = startOfLine(line);
 		int column = offset - startOfLine;
