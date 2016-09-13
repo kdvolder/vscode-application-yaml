@@ -12,7 +12,11 @@ import {LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, St
 
 PortFinder.basePort = 55282;
 
-const DEBUG = true;
+//TODO: The classpath.txt file is not packaged in the 'built' version. This causes the code
+// in this module to crash if DEBUG=true. 
+//We should auto-detect the missing classpath.txt file and disable debugging based on that.
+
+const DEBUG = false;
 const DEBUG_ARG = '-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n';
     //If DEBUG is falsy then
     //   we launch from the 'fat jar' (which has to be built by running mvn package)
