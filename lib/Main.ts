@@ -12,7 +12,7 @@ import {LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, St
 
 PortFinder.basePort = 55282;
 
-const DEBUG = false;
+const DEBUG = true;
 const DEBUG_ARG = '-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n';
     //If DEBUG is falsy then
     //   we launch from the 'fat jar' (which has to be built by running mvn package)
@@ -35,6 +35,7 @@ function getClasspath(context: VSCode.ExtensionContext):string {
 
 /** Called when extension is activated */
 export function activate(context: VSCode.ExtensionContext) {
+    VSCode.window.showInformationMessage("Spring Boot Yaml Support activating!");
     let javaExecutablePath = findJavaExecutable('java');
     
     if (javaExecutablePath == null) {
@@ -51,7 +52,7 @@ export function activate(context: VSCode.ExtensionContext) {
         // Options to control the language client
         let clientOptions: LanguageClientOptions = {
             // Register the server for java documents
-            documentSelector: ['plaintext'],
+            documentSelector: ['yaml'],
             synchronize: {
                 // Synchronize the setting section to the server:
                 configurationSection: 'languageServerExample',
