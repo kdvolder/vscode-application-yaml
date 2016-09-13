@@ -9,6 +9,3 @@ dependency-reduced-pom.xml
 classpath.txt
 *.vsix
 repo
-.project
-.classpath
-.settings/
